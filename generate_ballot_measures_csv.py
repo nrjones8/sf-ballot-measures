@@ -175,8 +175,8 @@ def process_detailed_prop_page(url):
 
     prop_details = {}
     for row in table.findAll('tr'):
-        field_name = row.find('th').text
-        field_value = row.find('td').text
+        field_name = row.find('th').text.strip()
+        field_value = row.find('td').text.strip()
         prop_details[field_name] = field_value
 
         # Last row we care about is "Description" - stop after that
@@ -267,7 +267,7 @@ def main():
             })
             all_dicts.append(prop_details_dict)
         except Exception as e:
-            print 'Got an exception, but will continue - happened on:', row
+            print 'Got an exception, but will continue - happened on:', full_url_to_more_info, row
             print e
 
 
