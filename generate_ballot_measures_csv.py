@@ -103,8 +103,6 @@ def classify_source_of_measure(raw_source):
         return lower_source
 
 
-
-
 def parse_pct_of_votes(raw_pct_of_votes):
     # `raw_pct_of_votes` looks like "Yes: 80.4%  /  No: 19.6%"
 
@@ -127,6 +125,20 @@ def parse_vote_count(raw_vote_count):
         'no': convert_int_with_commas(groups[2])
     }
 
+def parse_pct_required_to_pass(raw_pct_required):
+    field_regex = '([\d|.]+)(\%)'
+    if '66' in raw_pct_required:
+        return 66.66
+    else:
+        field_regex = '([\d]+)(.*)'
+        m = re.match(field_regex, raw_pct_required)
+        if m is not None:
+            match_groups = m.groups()
+            if len(match_groups) > 0:
+                return m.groups()[0]
+
+        return 'unknown'
+
 def parse_date_field(date_str):
     return [int(part) for part in date_str.split('/')]
 
@@ -136,7 +148,6 @@ def _parse_raw_details(raw_details_dict):
         'Description': PROP_DESCRIPTION,
         'Pass or Fail': PASS_OR_FAIL,
         'How it was placed on the ballot': RAW_SOURCE_OF_PROP,
-        'Percentage of votes required to pass': PCT_REQUIRED_TO_PASS,
     }
 
     cleaned_details = {
@@ -151,6 +162,7 @@ def _parse_raw_details(raw_details_dict):
     # Percentage of votes required to pass 50%+1
     pct_of_votes_values = parse_pct_of_votes(raw_details_dict['Percentage of votes'])
     count_of_votes_values = parse_vote_count(raw_details_dict['Vote Count'])
+    pct_votes_required_to_pass = parse_pct_required_to_pass(raw_details_dict['Percentage of votes required to pass'])
 
     voting_results_data = {
         VOTE_PCT_YES: pct_of_votes_values['yes'],
@@ -158,6 +170,8 @@ def _parse_raw_details(raw_details_dict):
 
         VOTE_COUNT_YES: count_of_votes_values['yes'],
         VOTE_COUNT_NO: count_of_votes_values['no'],
+
+        PCT_REQUIRED_TO_PASS: pct_votes_required_to_pass,
     }
     cleaned_details.update(voting_results_data)
 
@@ -187,7 +201,7 @@ def process_detailed_prop_page(url):
 
 def write_csv(dataset, csv_path, column_names):
     """
-    dataset - a list of JobPost objects
+    dataset
     csv_path - path to save data to
     column_names - the names of the columns for the CSV, in the desired order of columns in the CSV
     """
@@ -276,7 +290,6 @@ def main():
     df = pd.DataFrame(all_dicts)
     df.to_csv('data/ballot_measure_history.csv', columns=ALL_COLUMNS, index=False, encoding='utf-8')
     df.to_json('data/ballot_measure_history.json', orient='records')
-
 
 if __name__ == '__main__':
     main()
