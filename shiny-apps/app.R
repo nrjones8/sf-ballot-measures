@@ -14,8 +14,14 @@ ui <- shinyUI(
       'Explorer',
       htmlOutput('intro_html'),
       hr(),
-      plotlyOutput("prop_results_grouped_by_letter", height = '600px'),
-      htmlOutput('prop_details_html'),
+      actionButton('showRandomProp', 'Show me an interesting prop!'),
+      fluidRow(
+        column(
+          # Width of container is 8, so make the plot itself fill that entire container
+          width = 8, plotlyOutput("prop_results_grouped_by_letter", width = "100%", height = '1200px')
+        ),
+        column(width = 3, htmlOutput('prop_details_html'))
+      ),
       hr(),
       width = 12
     ),
@@ -23,7 +29,11 @@ ui <- shinyUI(
       'About',
       hr()
     ),
+    header = tags$head(
+      tags$link(rel = 'stylesheet', type = 'text/css', href = 'props.css')
+    ),
     # Lots more available: https://rstudio.github.io/shinythemes/
+    # https://bootswatch.com/flatly/
     theme = shinytheme('flatly')
   )
 )
@@ -38,7 +48,7 @@ server <- function(input, output) {
   earliest_year_date <- as.Date(paste('1/1/', earliest_year, sep=''), ELECTION_DATE_FORMAT)
   latest_year_date <- as.Date(paste('12/31/', latest_year, sep=''), ELECTION_DATE_FORMAT)
   
-  measures <- read.csv('data/ballot_measure_history.csv')
+  measures <- read.csv('../data/ballot_measure_history.csv')
   measures$parsed_election_date <- as.Date(measures$election_date, ELECTION_DATE_FORMAT)
   
   # Make a readable `Outcome` variable, we'll plot that instead of the raw `pass_or_fail` field
@@ -111,9 +121,9 @@ server <- function(input, output) {
       geom_point() +
       scale_size(range = c(.3, 3.5)) +
       guides(size = guide_legend()) +
-      scale_x_discrete('Election Date') +
+      scale_x_discrete('Election Date', position = 'top') +
       ylab('Proposition Letter') +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+      coord_flip()
 
     plt <- ggplotly(g, tooltip = 'text') %>%
       # Thanks https://community.plot.ly/t/disable-interactions-in-plotly-for-r-and-ggplot2/1361
@@ -121,16 +131,15 @@ server <- function(input, output) {
       # Thank you https://stackoverflow.com/a/38106870
       layout(
         legend = list(
-          x = 0.01,
+          x = .8,
           y = .95,
-          orientation = 'h'
-        )
-        #dragmode = 'select'
-        # To add margins:
-        # margin = list(r = 100)
+          orientation = 'v'
+        ),
         # See https://community.plot.ly/t/move-axis-labels-to-top-right/534/2
         # and https://plot.ly/r/axes/
-        # To move the axis to the top, just xaxis = list(side = 'top')
+        xaxis = list(side = 'top')
+        # TODO get the xaxis to show on the bottom as well
+        #dragmode = 'select'
       ) %>%
       add_annotations(
           x = as.numeric(most_popular_prop_u_93$election_date_factor),
@@ -152,8 +161,8 @@ server <- function(input, output) {
           )
       ) %>%
       add_annotations(
-        x = as.numeric(airbnb_prop_f_2015$election_date_factor),
-        y = as.numeric(airbnb_prop_f_2015$prop_letter),
+        x = as.numeric(airbnb_prop_f_2015$prop_letter),
+        y = as.numeric(airbnb_prop_f_2015$election_date_factor),
         
         # https://plot.ly/r/reference/#Layout_and_layout_style_objects because the reference docs don't
         # always show up when googling :'(
@@ -161,8 +170,8 @@ server <- function(input, output) {
         axref = 'x',
         ayref = 'y',
         # Where should the text actually be displayed?
-        ax = as.numeric(airbnb_prop_f_2015$election_date_factor) - 2,
-        ay = as.numeric(airbnb_prop_f_2015$prop_letter) + 13,
+        ax = as.numeric(airbnb_prop_f_2015$prop_letter) + 10,
+        ay = as.numeric(airbnb_prop_f_2015$election_date_factor) + .5,
         showarrow = TRUE,
         text = paste(
           'Stricter regulations on Airbnb fails to pass;',
@@ -264,10 +273,10 @@ server <- function(input, output) {
       )
       
       tags$div(class="header", checked=NA,
-               tags$h2(header_text),
-               tags$h3('Outcome'),
+               tags$h3(header_text),
+               tags$h4('Outcome'),
                tags$p(outcome_text),
-               tags$h3('Proposition Description'),
+               tags$h4('Proposition Description'),
                tags$p(clicked_data$description),
                tags$p(
                  'For more information on this proposition, see the',
