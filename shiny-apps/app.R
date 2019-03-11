@@ -102,7 +102,6 @@ server <- function(input, output) {
       color = Outcome,
       # size = ifelse(pass_or_fail == 'P', pct_yes_votes, pct_no_votes),
       size = pct_yes_votes,
-      # size = pct_margin,
       text = paste(
         'Election Date: ',
         parsed_election_date,
@@ -138,52 +137,11 @@ server <- function(input, output) {
         ),
         # See https://community.plot.ly/t/move-axis-labels-to-top-right/534/2
         # and https://plot.ly/r/axes/
-        xaxis = list(side = 'top')
+        xaxis = list(side = 'top'),
         # TODO get the xaxis to show on the bottom as well
-        #dragmode = 'select'
-      ) %>%
-      add_annotations(
-          x = as.numeric(most_popular_prop_u_93$election_date_factor),
-          y = as.numeric(most_popular_prop_u_93$prop_letter),
-          axref = 'x',
-          ayref = 'y',
-          # Where should the text actually be displayed?
-          ax = as.numeric(most_popular_prop_u_93$election_date_factor) + 8,
-          ay = as.numeric(most_popular_prop_u_93$prop_letter) + 2,
-          
-          showarrow = TRUE,
-          text = paste(
-            "1993's Prop U, requiring that candidates be SF residents, ",
-            "was the most popular of last 30 years, passing with 89% of the vote.",
-            sep = "<br />"
-          ),
-          font = list(
-            size = annotation_font_size
-          )
-      ) %>%
-      add_annotations(
-        x = as.numeric(airbnb_prop_f_2015$prop_letter),
-        y = as.numeric(airbnb_prop_f_2015$election_date_factor),
-        
-        # https://plot.ly/r/reference/#Layout_and_layout_style_objects because the reference docs don't
-        # always show up when googling :'(
-        # When we set `ax` and `ay`, make both of those be in the units of the graph, not in pixels
-        axref = 'x',
-        ayref = 'y',
-        # Where should the text actually be displayed?
-        ax = as.numeric(airbnb_prop_f_2015$prop_letter) + 10,
-        ay = as.numeric(airbnb_prop_f_2015$election_date_factor) + .5,
-        showarrow = TRUE,
-        text = paste(
-          'Stricter regulations on Airbnb fails to pass;',
-          'the company <a href="https://www.sfgate.com/bayarea/article/Prop-F-Measure-to-restrict-Airbnb-rentals-6609176.php">put in $8 million</a>',
-          'to help defeat the measure.',
-          sep='<br />'
-        ),
-        font = list(
-          size = annotation_font_size
-        )
-        )
+        # this doesn't actually seem to do anything :'(
+        dragmode = FALSE
+      )
       if (length(feinstein_recall_1983) > 0) {
         plt <- add_annotations(
           plt,
@@ -241,21 +199,20 @@ server <- function(input, output) {
     # https://github.com/ropensci/plotly/issues/842#issuecomment-349889093
     #hide_legend(plt)
   })
-  
-  # whew, a lot going on here that's pretty confusing.
-  # 1. observeEvent can take multiple events: https://stackoverflow.com/a/40182833
-  # 2. the `source` argument in `event_data` tells plotly which plot to look for. "Match the value of this string
-  # with the source argument in plot_ly() to retrieve the event data corresponding to a specific plot"
-  observeEvent(c(input$showRandomProp, event_data("plotly_click", source = PLOTLY_SOURCE_PLT_NAME)), {
-    click_event_data <- event_data("plotly_click")
-    
-    if (!is.null(click_event_data)) {
-      clicked_key <- click_event_data$key
-      to_display <- recent_measure_results %>% filter(key == clicked_key)
-    } else {
-      to_display <- recent_measure_results %>% filter(key == sample(1:nrow(recent_measure_results), 1))
-    }
 
+  observeEvent(input$showRandomProp, {
+    # Event handler for showing random prop
+    to_display <- recent_measure_results %>% filter(key == sample(1:nrow(recent_measure_results), 1))
+    output$prop_details_html <- renderUI({ display_prop_details(to_display) })
+  })
+  
+  observeEvent(event_data("plotly_click", source = PLOTLY_SOURCE_PLT_NAME), {
+    # The `source` argument in `event_data` tells plotly which plot to look for. "Match the value of this string
+    # with the source argument in plot_ly() to retrieve the event data corresponding to a specific plot"
+    click_event_data <- event_data("plotly_click", source = PLOTLY_SOURCE_PLT_NAME)
+    clicked_key <- click_event_data$key
+
+    to_display <- recent_measure_results %>% filter(key == clicked_key)
     output$prop_details_html <- renderUI({ display_prop_details(to_display) })
   })
   
