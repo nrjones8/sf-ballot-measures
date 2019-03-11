@@ -6,6 +6,7 @@ library(plotly)
 library(shinythemes)
 
 ELECTION_DATE_FORMAT = '%m/%d/%Y'
+PLOTLY_SOURCE_PLT_NAME <- 'main_props_plot'
 
 ui <- shinyUI(
   navbarPage(
@@ -14,7 +15,7 @@ ui <- shinyUI(
       'Explorer',
       htmlOutput('intro_html'),
       hr(),
-      actionButton('showRandomProp', 'Show me an interesting prop!'),
+      actionButton('showRandomProp', 'Display random prop'),
       fluidRow(
         column(
           # Width of container is 8, so make the plot itself fill that entire container
@@ -125,7 +126,7 @@ server <- function(input, output) {
       ylab('Proposition Letter') +
       coord_flip()
 
-    plt <- ggplotly(g, tooltip = 'text') %>%
+    plt <- ggplotly(g, tooltip = 'text', source = PLOTLY_SOURCE_PLT_NAME) %>%
       # Thanks https://community.plot.ly/t/disable-interactions-in-plotly-for-r-and-ggplot2/1361
       config(displayModeBar = F) %>%
       # Thank you https://stackoverflow.com/a/38106870
@@ -241,51 +242,21 @@ server <- function(input, output) {
     #hide_legend(plt)
   })
   
-  output$prop_details_html <- renderUI({
+  # whew, a lot going on here that's pretty confusing.
+  # 1. observeEvent can take multiple events: https://stackoverflow.com/a/40182833
+  # 2. the `source` argument in `event_data` tells plotly which plot to look for. "Match the value of this string
+  # with the source argument in plot_ly() to retrieve the event data corresponding to a specific plot"
+  observeEvent(c(input$showRandomProp, event_data("plotly_click", source = PLOTLY_SOURCE_PLT_NAME)), {
     click_event_data <- event_data("plotly_click")
     
     if (!is.null(click_event_data)) {
       clicked_key <- click_event_data$key
-      clicked_data <- recent_measure_results %>% filter(key == clicked_key)
-      prop_info <- paste(
-        'Election Date: ',
-        clicked_data$parsed_election_date,
-        '<br />',
-        'Prop ',
-        clicked_data$prop_letter_or_num,
-        '<br />',
-        '% Yes Votes: ',
-        clicked_data$pct_yes_votes,
-        sep = ''
-      )
-      
-      header_text <- paste(
-        'Prop ', clicked_data$prop_letter_or_num, ' - ', 
-        clicked_data$prop_title,
-        ' (', clicked_data$election_date, ')',
-        sep = ''
-      )
-      
-      passed_or_failed_text <- ifelse(clicked_data$pass_or_fail == 'F', 'This measure failed to pass.', 'This measure passed.')
-      outcome_text <- paste(
-        'Got ', clicked_data$pct_yes_votes, '% yes votes.',
-        passed_or_failed_text
-      )
-      
-      tags$div(class="header", checked=NA,
-               tags$h3(header_text),
-               tags$h4('Outcome'),
-               tags$p(outcome_text),
-               tags$h4('Proposition Description'),
-               tags$p(clicked_data$description),
-               tags$p(
-                 'For more information on this proposition, see the',
-                 tags$a(href=clicked_data$prop_url, target="_blank", "SF Public Library website."))
-      )
-      
+      to_display <- recent_measure_results %>% filter(key == clicked_key)
     } else {
-      tags$div(class="header", checked=NA)
+      to_display <- recent_measure_results %>% filter(key == sample(1:nrow(recent_measure_results), 1))
     }
+
+    output$prop_details_html <- renderUI({ display_prop_details(to_display) })
   })
   
   output$intro_html <- renderUI({
@@ -306,6 +277,45 @@ server <- function(input, output) {
       ))
     )
   })
+  
+  display_prop_details <- function(prop_to_show) {
+    # displays data from the `prop_to_show` row. It's a miracle this works?
+    prop_info <- paste(
+      'Election Date: ',
+      prop_to_show$parsed_election_date,
+      '<br />',
+      'Prop ',
+      prop_to_show$prop_letter_or_num,
+      '<br />',
+      '% Yes Votes: ',
+      prop_to_show$pct_yes_votes,
+      sep = ''
+    )
+    
+    header_text <- paste(
+      'Prop ', prop_to_show$prop_letter_or_num, ' - ', 
+      prop_to_show$prop_title,
+      ' (', prop_to_show$election_date, ')',
+      sep = ''
+    )
+    
+    passed_or_failed_text <- ifelse(prop_to_show$pass_or_fail == 'F', 'This measure failed to pass.', 'This measure passed.')
+    outcome_text <- paste(
+      'Got ', prop_to_show$pct_yes_votes, '% yes votes.',
+      passed_or_failed_text
+    )
+
+    tags$div(class="header", checked=NA,
+             tags$h3(header_text),
+             tags$h4('Outcome'),
+             tags$p(outcome_text),
+             tags$h4('Proposition Description'),
+             tags$p(prop_to_show$description),
+             tags$p(
+               'For more information on this proposition, see the',
+               tags$a(href=prop_to_show$prop_url, target="_blank", "SF Public Library website."))
+    )
+  }
 }
 
 shinyApp(ui, server)
