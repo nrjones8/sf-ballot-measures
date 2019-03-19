@@ -15,7 +15,6 @@ ui <- shinyUI(
       'Explorer',
       htmlOutput('intro_html'),
       hr(),
-      actionButton('showRandomProp', 'Display random prop'),
       fluidRow(
         column(
           # Width of container is 8, so make the plot itself fill that entire container
@@ -154,8 +153,8 @@ server <- function(input, output) {
           axref = 'x',
           ayref = 'y',
           # Where should the text actually be displayed?
-          ax = as.numeric(feinstein_recall_1983$election_date_factor) + 1,
-          ay = as.numeric(feinstein_recall_1983$prop_letter) + 24,
+          ax = as.numeric(feinstein_recall_1983$election_date_factor) + 14,
+          ay = as.numeric(feinstein_recall_1983$prop_letter) + 3,
           showarrow = TRUE,
           text = paste(
             'Mayor Feinstein <a href="http://sfballotprops.com/1983-an-odd-year-of-props.html">faces a recall election over</a>',
@@ -168,11 +167,37 @@ server <- function(input, output) {
           )
         )
       }
+    if (length(airbnb_prop_f_2015) > 0) {
+      plt <- add_annotations(
+        plt,
+        x = as.numeric(airbnb_prop_f_2015$prop_letter),
+        y = as.numeric(airbnb_prop_f_2015$election_date_factor),
+
+        # https://plot.ly/r/reference/#Layout_and_layout_style_objects because the reference docs don't
+        # always show up when googling :'(
+        # When we set `ax` and `ay`, make both of those be in the units of the graph, not in pixels
+        axref = 'x',
+        ayref = 'y',
+        # Where should the text actually be displayed?
+        ax = as.numeric(airbnb_prop_f_2015$prop_letter) + 11,
+        ay = as.numeric(airbnb_prop_f_2015$election_date_factor) + 1,
+        showarrow = TRUE,
+        text = paste(
+          'Stricter regulations on Airbnb fails to pass; the company',
+          '<a href="https://www.sfgate.com/bayarea/article/Prop-F-Measure-to-restrict-Airbnb-rentals-6609176.php">put in $8 million</a> to help defeat the measure.',
+          sep='<br />'
+        ),
+        font = list(
+          size = annotation_font_size
+        )
+      )
+    }
+
     if (length(closest_prop_h_11) > 0) {
       plt <- add_annotations(
         plt,
-        x = as.numeric(closest_prop_h_11$election_date_factor),
-        y = as.numeric(closest_prop_h_11$prop_letter),
+        x = as.numeric(closest_prop_h_11$prop_letter),
+        y = as.numeric(closest_prop_h_11$election_date_factor),
         
         # https://plot.ly/r/reference/#Layout_and_layout_style_objects because the reference docs don't
         # always show up when googling :'(
@@ -180,8 +205,8 @@ server <- function(input, output) {
         axref = 'x',
         ayref = 'y',
         # Where should the text actually be displayed?
-        ax = as.numeric(closest_prop_h_11$election_date_factor),
-        ay = as.numeric(closest_prop_h_11$prop_letter) + 17,
+        ax = as.numeric(closest_prop_h_11$prop_letter) + 8,
+        ay = as.numeric(closest_prop_h_11$election_date_factor) + 2,
         showarrow = TRUE,
         # (91678 no + 91525 yes) = 183,203 total --> 91602 required to pass.
         # 91602 - 91525 = 77 votes short of passing
@@ -200,12 +225,6 @@ server <- function(input, output) {
     #hide_legend(plt)
   })
 
-  observeEvent(input$showRandomProp, {
-    # Event handler for showing random prop
-    to_display <- recent_measure_results %>% filter(key == sample(1:nrow(recent_measure_results), 1))
-    output$prop_details_html <- renderUI({ display_prop_details(to_display) })
-  })
-  
   observeEvent(event_data("plotly_click", source = PLOTLY_SOURCE_PLT_NAME), {
     # The `source` argument in `event_data` tells plotly which plot to look for. "Match the value of this string
     # with the source argument in plot_ly() to retrieve the event data corresponding to a specific plot"
