@@ -1,3 +1,4 @@
 *.pyc
 *.Rhistory
 sf-ballot-measures-env/*
+cached_pages/*
