@@ -41,10 +41,10 @@ export default class BallotPropTemplate extends React.Component {
           },
         },
         // TODO this looks terrible right now
-        xaxis: {
-          position: 'top',
-          offsetY: -40,
-        },
+        // xaxis: {
+        //   position: 'top',
+        //   offsetY: -40,
+        // },
         dataLabels: {
           enabled: false
         },
