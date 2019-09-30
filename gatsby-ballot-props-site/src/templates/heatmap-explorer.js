@@ -9,6 +9,7 @@ export default class BallotPropTemplate extends React.Component {
     constructor(props) {
         super(props);
 
+        this.getHeatmapOptions = this.getHeatmapOptions.bind(this);
         this.state = {
           propsData: Object.values(props.pageContext).filter(p => p.electionYear >= DEFAULT_MIN_YEAR),
           options: this.getHeatmapOptions()
@@ -25,20 +26,37 @@ export default class BallotPropTemplate extends React.Component {
             colorScale: {
               ranges: [
                 {
-                  from: -40,
+                  from: -50,
                   to: 0,
                   name: 'did not passs',
                   color: '#FF0000'
                 },
                 {
                   from: 0,
-                  to: 40,
+                  to: 50,
                   name: 'passed',
                   color: '#128FD9'
                 }
               ]
             }
           },
+        },
+        tooltip: {
+          custom: function({series, seriesIndex, dataPointIndex, w}) {
+            // these don't really work :`(
+            console.log(series);
+            console.log(series[seriesIndex]);
+            console.log(series[seriesIndex][dataPointIndex]);
+            // console.log(w);
+            console.log('done w/ tooltip');
+            return '<div class="arrow_box">' +
+            '<span>' + 'hi!!!!!' + series[seriesIndex][dataPointIndex] + '</span>' +
+            '</div>'
+          },
+          z: {
+            show: true,
+            formatter: x => 'hi',
+          }
         },
         // TODO this looks terrible right now
         // xaxis: {
@@ -55,7 +73,7 @@ export default class BallotPropTemplate extends React.Component {
     }
 
     render() {
-      console.log(this.props.pageContext);
+      // console.log(this.props.pageContext);
         return (
             <Layout>
                 <div className="row">

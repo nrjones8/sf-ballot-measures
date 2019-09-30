@@ -21,7 +21,10 @@ function prepDataForApexHeatmap(allPropsData) {
             x: allProps[index].prop_letter_or_num,
             y: allProps[index].pct_yes_votes - allProps[index].pct_required_to_pass,
           
-            // Extra context, e.g. to display in a tooltip
+            // extra context that we care about
+            propLetterOrNum: allProps[index].prop_letter_or_num,
+            pctYesVotes: allProps[index].pct_yes_votes,
+            pctRequiredToPass: allProps[index].pct_required_to_pass,
             numYesVotes: allProps[index].num_yes_votes,
             numNoVotes: allProps[index].num_no_votes,
             description: allProps[index].description,
