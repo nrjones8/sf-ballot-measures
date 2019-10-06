@@ -53,14 +53,14 @@ ui <- shinyUI(
 
 server <- function(input, output) {
   annotation_font_size <- 10
-  # Last 30 years
-  earliest_year <- 1980
+  # This is pretty arbitrary
+  earliest_year <- 1970
   latest_year <- 2018
   
   earliest_year_date <- as.Date(paste('1/1/', earliest_year, sep=''), ELECTION_DATE_FORMAT)
   latest_year_date <- as.Date(paste('12/31/', latest_year, sep=''), ELECTION_DATE_FORMAT)
   
-  raw_measures <- read.csv('../data/ballot_measure_history.csv')
+  raw_measures <- read.csv('ballot_measure_history.csv')
 
   measures <- raw_measures %>% mutate(
     parsed_election_date = as.Date(election_date, ELECTION_DATE_FORMAT),
@@ -115,8 +115,7 @@ server <- function(input, output) {
     
     airbnb_prop_f_2015 <- recent_measure_results %>% 
       filter(election_year == '2015' & election_month == '11' & prop_letter_or_num == 'F')
-    
-    # TODO ADD FEINSTEIN and add http://sfballotprops.com/1983-an-odd-year-of-props.html
+
     feinstein_recall_1983 <- recent_measure_results %>% 
       filter(election_year == '1983' & election_month == '4' & prop_letter_or_num == 'A')
 
@@ -144,7 +143,7 @@ server <- function(input, output) {
         '<br />',
         Outcome,
         '<br />',
-        '(Click to show more details below plot)',
+        '(Click to show more details next to plot)',
         sep = ''
       )
     )) +
@@ -184,11 +183,11 @@ server <- function(input, output) {
           axref = 'x',
           ayref = 'y',
           # Where should the text actually be displayed?
-          ax = as.numeric(feinstein_recall_1983$prop_letter) + 14,
-          ay = as.numeric(feinstein_recall_1983$election_date_factor) + 3,
+          ax = as.numeric(feinstein_recall_1983$prop_letter) + 24,
+          ay = as.numeric(feinstein_recall_1983$election_date_factor) + 0,
           showarrow = TRUE,
           text = paste(
-            'Mayor Feinstein <a href="http://sfballotprops.com/1983-an-odd-year-of-props.html">faces a recall election over</a>',
+            'Mayor Dianne Feinstein <a href="http://sfballotprops.com/1983-an-odd-year-of-props.html">faces a recall election over</a>',
             'her leadership in banning handguns.',
             'Over 80% voted to keep her in office.',
             sep='<br />'
