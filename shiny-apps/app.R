@@ -59,12 +59,12 @@ server <- function(input, output) {
   
   earliest_year_date <- as.Date(paste('1/1/', earliest_year, sep=''), ELECTION_DATE_FORMAT)
   latest_year_date <- as.Date(paste('12/31/', latest_year, sep=''), ELECTION_DATE_FORMAT)
-  PASSED_15_GREATER <- 'Passed by > 15%'
-  PASSED_5_TO_15 <- 'Passed by 5-15%'
-  PASSED_0_TO_5 <- 'Passed by < 5%'
-  FAILED_15_GREATER <- 'Failed by > 15%'
-  FAILED_5_TO_15 <- 'Failed by 5-15%'
-  FAILED_0_TO_5 <- 'Failed by < 5%'
+  PASSED_15_GREATER <- 'Pass > 15%'
+  PASSED_5_TO_15 <- 'Pass 5-15%'
+  PASSED_0_TO_5 <- 'Pass < 5%'
+  FAILED_15_GREATER <- 'Fail > 15%'
+  FAILED_5_TO_15 <- 'Fail 5-15%'
+  FAILED_0_TO_5 <- 'Fail < 5%'
   margin_bucket_factor <- c(FAILED_15_GREATER, FAILED_5_TO_15, FAILED_0_TO_5, PASSED_0_TO_5, PASSED_5_TO_15, PASSED_15_GREATER)
   
   raw_measures <- read.csv('ballot_measure_history.csv')
@@ -136,7 +136,7 @@ server <- function(input, output) {
       y = prop_letter,
       color = bucketed_margin,
       #alpha = ifelse(pass_or_fail == 'P', pct_yes_votes, pct_no_votes),
-      size = 2.5,
+      size = 3,
       # size = pct_yes_votes,
       #size = ifelse(pass_or_fail == 'P', pct_yes_votes, pct_no_votes),
       text = paste(
@@ -165,9 +165,9 @@ server <- function(input, output) {
       ) +
       guides(size = guide_legend()) +
       scale_x_discrete('Election Date', position = 'top') +
-      ylab('SF Ballot Proposition History') +
+      #ylab(element_blank()) +
       # No legend title (other legend stuff is handled in plotly)
-      theme(legend.title = element_blank()) +
+      theme(legend.title = element_blank(), axis.title.x = element_blank()) +
       coord_flip()
 
     plt <- ggplotly(g, tooltip = 'text', source = PLOTLY_SOURCE_PLT_NAME) %>%
@@ -176,13 +176,13 @@ server <- function(input, output) {
       # Thank you https://stackoverflow.com/a/38106870
       layout(
         legend = list(
-          # x = .65,
-          # y = .75,
-          orientation = 'v',
+          x = 0,
+          y = 1.05,
+          orientation = 'h',
           # "toggleothers" makes the clicked item the sole visible item on the graph.
           itemclick = 'toggle',
           font = list(
-            size = 10
+            size = 9
           )
         ),
         # See https://community.plot.ly/t/move-axis-labels-to-top-right/534/2
