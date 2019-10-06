@@ -298,7 +298,7 @@ server <- function(input, output) {
       tags$p(paste(
         'Below, you can explore the outcomes of historical ballot measures in San Francisco. The color of the point indicates ',
         'how much support or opposition the measure received. Clicking on an individual point on the graph will display more ',
-        'details of the measure below the graph.'
+        'details of the measure next to the graph.'
       ))
     )
   })
