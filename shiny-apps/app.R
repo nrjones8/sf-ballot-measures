@@ -27,7 +27,7 @@ ui <- shinyUI(
     ),
     tabPanel(
       'About',
-      hr()
+      htmlOutput('about_html')
     ),
     header = tags$head(
       # This is not my proudest code, but getting an external CSS file to play nicely with shinyapps.io
@@ -49,7 +49,6 @@ ui <- shinyUI(
     theme = shinytheme('flatly')
   )
 )
-
 
 server <- function(input, output) {
   annotation_font_size <- 10
@@ -304,6 +303,19 @@ server <- function(input, output) {
     )
   })
   
+  output$about_html <- renderUI({
+    tags$div(
+      tags$p(
+        'The dataset used here was originally assembled from the SFPL ',
+        tags$a(href='https://sfpl.org/index.php?pg=2000027201&PropTitle=&Description=&PropLetter=&Month=&Year=&submit=Search', 'Ballot Proposition Database'),
+        ', and was turned into CSV for analysis. That CSV is available ',
+        tags$a(href='https://github.com/nrjones8/sf-ballot-measures/blob/master/data/ballot_measure_history.csv', 'on Github.'),
+        'If you have spot any errors or otherwise have feedback, feel free to file an issue on Github or reach out',
+        tags$a(href='https://twitter.com/nrjones8', 'via Twitter!')
+      )
+    )
+  })
+
   display_prop_details <- function(prop_to_show) {
     # displays data from the `prop_to_show` row. It's a miracle this works?
     prop_info <- paste(
