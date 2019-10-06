@@ -134,7 +134,8 @@ server <- function(input, output) {
       key = key,
       x = election_date_factor, 
       y = prop_letter,
-      color = bucketed_margin,
+      fill = bucketed_margin,
+      stroke = .1,
       #alpha = ifelse(pass_or_fail == 'P', pct_yes_votes, pct_no_votes),
       size = 3,
       # size = pct_yes_votes,
@@ -160,7 +161,7 @@ server <- function(input, output) {
       geom_point() +
       scale_size(range = c(.3, 3.5)) +
       # http://colorbrewer2.org/?type=diverging&scheme=Spectral&n=6
-      scale_color_manual(
+      scale_fill_manual(
         values=c('#b2182b','#ef8a62','#fddbc7','#d1e5f0','#67a9cf','#2166ac')
       ) +
       guides(size = guide_legend()) +
@@ -297,9 +298,8 @@ server <- function(input, output) {
       )),
       tags$p(paste(
         'Below, you can explore the outcomes of historical ballot measures in San Francisco. The color of the point indicates ',
-        'whether the measure passed; larger points correspond to greater support or opposition, while smaller points ',
-        'are used for measures that barely passed or barely failed. Clicking on an individual ',
-        'point on the graph will display more details of the measure below the graph.'
+        'how much support or opposition the measure received. Clicking on an individual point on the graph will display more ',
+        'details of the measure below the graph.'
       ))
     )
   })
