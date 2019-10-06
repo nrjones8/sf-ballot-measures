@@ -54,33 +54,44 @@ ui <- shinyUI(
 server <- function(input, output) {
   annotation_font_size <- 10
   # This is pretty arbitrary
-  earliest_year <- 1970
+  earliest_year <- 1975
   latest_year <- 2018
   
   earliest_year_date <- as.Date(paste('1/1/', earliest_year, sep=''), ELECTION_DATE_FORMAT)
   latest_year_date <- as.Date(paste('12/31/', latest_year, sep=''), ELECTION_DATE_FORMAT)
+  PASSED_15_GREATER <- 'Passed by > 15%'
+  PASSED_5_TO_15 <- 'Passed by 5-15%'
+  PASSED_0_TO_5 <- 'Passed by < 5%'
+  FAILED_15_GREATER <- 'Failed by > 15%'
+  FAILED_5_TO_15 <- 'Failed by 5-15%'
+  FAILED_0_TO_5 <- 'Failed by < 5%'
+  margin_bucket_factor <- c(FAILED_15_GREATER, FAILED_5_TO_15, FAILED_0_TO_5, PASSED_0_TO_5, PASSED_5_TO_15, PASSED_15_GREATER)
   
   raw_measures <- read.csv('ballot_measure_history.csv')
 
-  measures <- raw_measures %>% mutate(
-    parsed_election_date = as.Date(election_date, ELECTION_DATE_FORMAT),
+  recent_measure_results <- raw_measures %>% mutate(
+    parsed_election_date = as.Date(election_date, ELECTION_DATE_FORMAT)
+  ) %>% filter(parsed_election_date > earliest_year_date & parsed_election_date < latest_year_date) %>%
+  mutate(
     title_as_string = as.character(prop_title),
     shortened_title = case_when(
       nchar(title_as_string) > 40 ~ paste(substr(title_as_string, 1, 40), '...', sep=''),
       TRUE ~ title_as_string
     ),
-    Outcome = ifelse(pass_or_fail == 'P', 'Passed', 'Failed')
+    Outcome = ifelse(pass_or_fail == 'P', 'Passed', 'Failed'),
+    # this is literally the most common/confusing R error of all time!!
+    margin_of_result = as.numeric(pct_yes_votes) - as.numeric(as.character(pct_required_to_pass)),
+    bucketed_margin = factor(case_when(
+      # order of these cases matters - go from most specific to least
+      margin_of_result >= 15 ~ PASSED_15_GREATER,
+      margin_of_result >= 5 ~ PASSED_5_TO_15,
+      margin_of_result > 0 ~ PASSED_0_TO_5,
+      # Did not pass
+      margin_of_result <= -15 ~ FAILED_15_GREATER,
+      margin_of_result <= -5 ~ FAILED_5_TO_15,
+      margin_of_result < 0 ~ FAILED_0_TO_5
+    ), margin_bucket_factor)
   )
-  
-  #measures$parsed_election_date <- as.Date(measures$election_date, ELECTION_DATE_FORMAT)
-  
-  # Useful for displaying in mousover
-  #measures$shortened_title <- ifelse(length(measures$prop_title) > 10, substr(measures$prop_title, 1, 10), measures_prop_title)
-  
-  # Make a readable `Outcome` variable, we'll plot that instead of the raw `pass_or_fail` field
-  #measures$Outcome <- ifelse(measures$pass_or_fail == 'P', 'Passed', 'Failed')
-  recent_measure_results <- measures %>% 
-    filter(parsed_election_date > earliest_year_date & parsed_election_date < latest_year_date)
   
   # This is confusing / bizarre, but https://gist.github.com/daattali/9440f0b278dbbf538b3587e026811426#gistcomment-2207525
   # was the inspiration and sort of helps explain
@@ -122,13 +133,12 @@ server <- function(input, output) {
     g <- ggplot(recent_measure_results, aes(
       key = key,
       x = election_date_factor, 
-      y = prop_letter, 
-      # what if this was a 3-color gradient ("failed by a lot", "really close", "passed by a lot"?)
-      color = Outcome,
-      alpha = ifelse(pass_or_fail == 'P', pct_yes_votes, pct_no_votes),
-      #size = 3,
+      y = prop_letter,
+      color = bucketed_margin,
+      #alpha = ifelse(pass_or_fail == 'P', pct_yes_votes, pct_no_votes),
+      size = 2.5,
       # size = pct_yes_votes,
-      size = ifelse(pass_or_fail == 'P', pct_yes_votes, pct_no_votes),
+      #size = ifelse(pass_or_fail == 'P', pct_yes_votes, pct_no_votes),
       text = paste(
         'Election Date: ',
         parsed_election_date,
@@ -149,9 +159,15 @@ server <- function(input, output) {
     )) +
       geom_point() +
       scale_size(range = c(.3, 3.5)) +
+      # http://colorbrewer2.org/?type=diverging&scheme=Spectral&n=6
+      scale_color_manual(
+        values=c('#b2182b','#ef8a62','#fddbc7','#d1e5f0','#67a9cf','#2166ac')
+      ) +
       guides(size = guide_legend()) +
       scale_x_discrete('Election Date', position = 'top') +
-      ylab('Proposition Letter') +
+      ylab('SF Ballot Proposition History') +
+      # No legend title (other legend stuff is handled in plotly)
+      theme(legend.title = element_blank()) +
       coord_flip()
 
     plt <- ggplotly(g, tooltip = 'text', source = PLOTLY_SOURCE_PLT_NAME) %>%
@@ -160,9 +176,14 @@ server <- function(input, output) {
       # Thank you https://stackoverflow.com/a/38106870
       layout(
         legend = list(
-          x = .8,
-          y = .95,
-          orientation = 'v'
+          # x = .65,
+          # y = .75,
+          orientation = 'v',
+          # "toggleothers" makes the clicked item the sole visible item on the graph.
+          itemclick = 'toggle',
+          font = list(
+            size = 10
+          )
         ),
         # See https://community.plot.ly/t/move-axis-labels-to-top-right/534/2
         # and https://plot.ly/r/axes/
@@ -171,7 +192,7 @@ server <- function(input, output) {
         # this doesn't actually seem to do anything :'(
         dragmode = FALSE
       )
-      if (length(feinstein_recall_1983) > 0) {
+    if (length(feinstein_recall_1983) > 0) {
         plt <- add_annotations(
           plt,
           x = as.numeric(feinstein_recall_1983$prop_letter),
@@ -222,7 +243,6 @@ server <- function(input, output) {
         )
       )
     }
-
     if (length(closest_prop_h_11) > 0) {
       plt <- add_annotations(
         plt,
@@ -305,9 +325,9 @@ server <- function(input, output) {
       sep = ''
     )
     
-    passed_or_failed_text <- ifelse(prop_to_show$pass_or_fail == 'F', 'This measure failed to pass.', 'This measure passed.')
+    passed_or_failed_text <- ifelse(prop_to_show$pass_or_fail == 'F', 'It failed to pass.', 'It passed.')
     outcome_text <- paste(
-      'Got ', prop_to_show$pct_yes_votes, '% yes votes.',
+      'This measure required ', prop_to_show$pct_required_to_pass, '% to pass, and got ', prop_to_show$pct_yes_votes, '% yes votes.',
       passed_or_failed_text
     )
 
