@@ -5,15 +5,24 @@ import Layout from "../components/layout"
 
 const DEFAULT_MIN_YEAR = 1980;
 
+function getFullDataPoint(dateIndex, propLetterIndex) {
+  console.log(`Would get date index ${dateIndex} for prop index ${propLetterIndex}`);
+}
+
 export default class BallotPropTemplate extends React.Component {
     constructor(props) {
         super(props);
 
         this.getHeatmapOptions = this.getHeatmapOptions.bind(this);
+        this.getTooltipText = this.getTooltipText.bind(this);
         this.state = {
           propsData: Object.values(props.pageContext).filter(p => p.electionYear >= DEFAULT_MIN_YEAR),
           options: this.getHeatmapOptions()
         };
+    }
+
+    getTooltipText(dateIndex, propLetterIndex) {
+      console.log(`Tooltip text!! Would get date index ${dateIndex} for prop index ${propLetterIndex}`);
     }
 
     getHeatmapOptions() {
@@ -44,10 +53,21 @@ export default class BallotPropTemplate extends React.Component {
         tooltip: {
           custom: function({series, seriesIndex, dataPointIndex, w}) {
             // these don't really work :`(
-            console.log(series);
-            console.log(series[seriesIndex]);
-            console.log(series[seriesIndex][dataPointIndex]);
-            // console.log(w);
+            // date
+            console.log('index ' + seriesIndex);
+            console.log('corresponds to date of ' + w.globals.seriesNames[seriesIndex]);
+            // prop letter
+            console.log('dataPointIndex ' + dataPointIndex);
+
+            // hrmmmm labels is wrong/off...
+            console.log('corresponds to prop letter of ' + w.globals.labels[dataPointIndex]);
+            console.log(w);
+            getFullDataPoint(seriesIndex, dataPointIndex);
+            // bleh, can't reference `this` here...
+            // this.getTooltipText(seriesIndex, dataPointIndex);
+            // 
+            // w.seriesNames --> has the actual dates
+
             console.log('done w/ tooltip');
             return '<div class="arrow_box">' +
             '<span>' + 'hi!!!!!' + series[seriesIndex][dataPointIndex] + '</span>' +
